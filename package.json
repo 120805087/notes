@@ -8,6 +8,7 @@
     "preview": "rspress preview"
   },
   "dependencies": {
+    "@arco-design/web-react": "^2.59.1",
     "rspress": "^1.0.0"
   },
   "devDependencies": {
