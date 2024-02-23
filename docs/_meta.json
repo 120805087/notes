@@ -1,0 +1,12 @@
+[
+  {
+    "text": "笔记",
+    "link": "/note/",
+    "activeMatch": "/note/"
+  },
+  {
+    "text": "Hello World",
+    "link": "/hello/",
+    "activeMatch": "/hello/" 
+  }
+]
