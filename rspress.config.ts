@@ -11,6 +11,7 @@ export default defineConfig({
     light: "/felity-light-logo.png",
     dark: "/felity-dark-logo.png",
   },
+  globalStyles: path.join(__dirname, "src/assets/", "global.css"),
   themeConfig: {
     socialLinks: [
       {
