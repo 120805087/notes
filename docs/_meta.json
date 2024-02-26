@@ -5,9 +5,9 @@
     "activeMatch": "/note/"
   },
   {
-    "text": "Hello World",
-    "link": "/hello/",
-    "activeMatch": "/hello/" 
+    "text": "杂记",
+    "link": "/jotting/",
+    "activeMatch": "/jotting/" 
   },
   {
     "text": "其他",

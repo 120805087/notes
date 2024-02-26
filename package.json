@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@arco-design/web-react": "^2.59.1",
+    "classnames": "^2.5.1",
+    "framer-motion": "^11.0.6",
     "rspress": "^1.0.0"
   },
   "devDependencies": {

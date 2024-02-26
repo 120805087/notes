@@ -27,4 +27,16 @@ export default defineConfig({
       message: "© 2024 Felity. All Rights Reserved. ",
     },
   },
+  builderConfig: {
+    html: {
+      tags: [
+        {
+          tag: "script",
+          attrs: {
+            src: "https://cdn.tailwindcss.com",
+          },
+        },
+      ],
+    },
+  },
 });

@@ -1,0 +1,13 @@
+.nav-container {
+  min-height: calc(100vh - 72px);
+}
+.nav-container .nav-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,120px);
+  justify-content: center;
+}
+.nav-container .nav-row-item {
+  width: 120px;
+  display: grid;
+  justify-content: center;
+}
