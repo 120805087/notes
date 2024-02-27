@@ -18,7 +18,7 @@ export default function Nav() {
         "bg-slate-800": dark,
       })}
     >
-      <div className="container mx-auto first:pt-6">
+      <div className="container mx-auto pt-6 pb-8">
         {data.map((item, index) => (
           <div key={index}>
             <div className="text-center font-semibold text-4xl italic">
