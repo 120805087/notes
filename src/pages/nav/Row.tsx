@@ -1,4 +1,5 @@
 import React from "react";
+import { normalizeImagePath } from "rspress/runtime";
 import { motion } from "framer-motion";
 
 import "./index.css";
@@ -28,7 +29,11 @@ const Row = ({ item }: Props) => {
           href={item.link}
           target="_blank"
         >
-          <img className="w-[50px] h-[50px]" src={item.icon} alt="" />
+          <img
+            className="w-[50px] h-[50px]"
+            src={normalizeImagePath(item.icon)}
+            alt=""
+          />
           <p className="mt-2 text-xs">{item.name}</p>
         </a>
       </motion.div>
