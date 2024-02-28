@@ -65,9 +65,9 @@ export const data: {
         link: "https://ant-design.antgroup.com/index-cn",
       },
       {
-        icon: "/nav/radix.png",
-        name: "Radix",
-        link: "https://www.radix-ui.com/themes/docs/overview/getting-started",
+        icon: "/nav/daisy-ui.png",
+        name: "DaisyUi",
+        link: "https://daisyui.com/",
       },
     ],
   },
