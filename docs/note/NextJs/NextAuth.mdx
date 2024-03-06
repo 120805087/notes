@@ -1,0 +1,448 @@
+import { normalizeImagePath } from "rspress/runtime";
+
+# NextAuth
+
+## next-auth 的安装与配置
+
+### 1. 安装 next-auth
+
+```base
+npm i next-auth
+```
+
+### 2. 添加 api route
+
+```ts title="/app/api/auth/[...nextauth]/authOptions.ts"
+export const authOptions = {
+  providers: [
+    //...add more providers here
+  ],
+};
+```
+
+上面的文件专门提取是为了方便后续再其他地方的使用。 不在 `route.ts` 导出， 是因为 Next.Js 的 `route.ts` 文件不支持导出， 这点在执行 `npm run build` 时会报错。
+
+```ts title="/app/api/auth/[...nextauth]/route.ts"
+import NextAuth from "next-auth";
+import { authOptions } from "./authOptions";
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+```
+
+### 3. next-auth 添加环境变量
+
+```base title=".env" {2-3}
+DATABASE_URL="mysql://root:123456@localhost:3306/next-prisma"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="2c3d7d8e8b31f3caf1859226302b987d"
+```
+
+> `NEXTAUTH_SECRET` 为随机字符串，可以使用 [https://generate-secret.vercel.app/32](https://generate-secret.vercel.app/32) 生成随机值。
+
+:::warning{title="注意"}
+在 `.env` 文件中添加 `NEXTAUTH_SECRET` 和 `NEXTAUTH_URL` 环境变量，是必须的。
+除了在终端发出警告外，还会导致在使用 `server api` 获取 `session` 失败。
+:::
+
+## 配置 google 登录
+
+### 1. 配置 google
+
+前往 [google 开发者平台](https://console.developers.google.com/apis/credentials)， 创建一个新项目， 并添加一个 OAuth 客户端 ID。
+
+<img src={normalizeImagePath("/note/next/nextauth-1.png")} />
+
+### 2. 配置 .env
+
+在 `.env` 文件中添加 google 相关的配置。
+
+```base title=".env"
+GOOGLE_CLIENT_ID="YOU_GOOGLE_CLIENT_ID"
+GOOGLE_CLIENT_SECRET="YOU_GOOGLE_CLIENT_SECRET"
+```
+
+### 3. 配置 next-auth
+
+```ts title="/app/api/auth/[...nextauth]/authOptions.ts"
+import GoogleProvider from "next-auth/providers/google";
+
+export const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+};
+```
+
+## 配置 github 登录
+
+### 1. 配置 github
+
+前往 [github 设置](https://github.com/settings/apps)， 添加一个 OAuth Apps。
+
+<img src={normalizeImagePath("/note/next/nextauth-2.png")} />
+
+### 2. 配置 .env
+
+在 `.env` 文件中添加 github 相关的配置。
+
+```base title=".env"
+GITHUB_ID="YOU_GITHUB_ID"
+GITHUB_SECRET="YOU_GITHUB_SECRET"
+```
+
+### 3. 配置 next-auth
+
+```ts title="/app/api/auth/[...nextauth]/authOptions.ts" {1,6-9}
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+
+export const authOptions = {
+  providers: [
+    GithubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+};
+```
+
+## 配置自定义登录（建立在已经连接了数据库）
+
+### 1. 配置 next-auth
+
+```ts title="/app/api/auth/[...nextauth]/authOptions.ts" {3,12-46}
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import bcrypt from "bcrypt";
+import prisma from "@/prisma/client";
+import type { NextAuthOptions } from "next-auth";
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        username: { label: "Username", type: "text", placeholder: "username" },
+        email: { label: "Email", type: "email", placeholder: "email" },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "password",
+        },
+      },
+      async authorize(credentials, req) {
+        if (
+          !credentials?.email &&
+          !credentials?.password &&
+          !credentials?.username
+        )
+          return null;
+
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+        });
+
+        if (!user) return null;
+
+        const passwordMatch = await bcrypt.compare(
+          credentials.password,
+          user.hashedPassword!
+        );
+
+        return passwordMatch ? user : null;
+      },
+    }),
+    GithubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  session: {
+    strategy: "jwt",
+  },
+};
+```
+
+### 2. 增加注册功能
+
+```ts title="api/register/route.ts"
+import { NextRequest, NextResponse } from "next/server";
+import z from "zod";
+import bcrypt from "bcrypt";
+import prisma from "@/prisma/client";
+
+const schema = z.object({
+  username: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+
+  const validating = await schema.safeParse(body);
+
+  if (!validating.success)
+    return NextResponse.json(validating.error.format(), { status: 400 });
+
+  let user = await prisma.user.findUnique({
+    where: {
+      email: body.email,
+    },
+  });
+
+  if (user)
+    return NextResponse.json(
+      { message: "User already exists" },
+      { status: 400 }
+    );
+
+  user = await prisma.user.create({
+    data: {
+      name: body.username,
+      email: body.email,
+      hashedPassword: await bcrypt.hash(body.password, 10),
+    },
+  });
+
+  return NextResponse.json({ message: "User created", data: user });
+}
+```
+
+添加注册功能，将用户信息存储到数据库中。
+
+<img src={normalizeImagePath("/note/next/nextauth-7.png")} />
+
+### 3. 验证登录功能
+
+<img src={normalizeImagePath("/note/next/nextauth-8.png")} />
+
+可以看到结果，验证成功
+
+<img src={normalizeImagePath("/note/next/nextauth-9.png")} />
+
+## 登录验证
+
+### 1. 使用 server api 获取 session
+
+```ts title="api/auth/token/route.ts"
+import { getToken } from "next-auth/jwt";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+  const token = await getToken({ req: request });
+
+  return NextResponse.json(token);
+}
+```
+
+浏览器访问 `http://localhost:3000/api/auth/token` , 返回如下结果:
+
+<img src={normalizeImagePath("/note/next/nextauth-3.png")} />
+
+### 2. 使用 client api 获取 session
+
+#### 1. 使用 `SessionProvider` 包裹
+
+```ts title="app/AuthProvider.ts"
+"use client";
+
+import React from "react";
+import { SessionProvider } from "next-auth/react";
+
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  return <SessionProvider>{children}</SessionProvider>;
+};
+
+export default AuthProvider;
+```
+
+> 单独提取是因为代码需要放在 `use client`, 引入 `layout.ts`
+
+```tsx title="app/layout.ts"
+import AuthProvider from "./AuthProvider";
+
+<body className={inter.className}>
+  <AuthProvider>{children}</AuthProvider>
+</body>;
+```
+
+#### 2. 使用 `useSession` 获取 session
+
+```tsx title="app/page.tsx"
+"use client";
+
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+
+export default function Home() {
+  const { data: session, status } = useSession();
+
+  return (
+    <main className="min-h-screen p-4">
+      {status === "unauthenticated" ? (
+        <Link
+          className="inline-block px-4 py-2 bg-cyan-100 border rounded-md"
+          href="./api/auth/signin"
+        >
+          Signin
+        </Link>
+      ) : (
+        <>
+          <div>{session?.user?.name}</div>
+          <Link
+            className="inline-block px-4 py-2 bg-cyan-100 border rounded-md"
+            href="./api/auth/Signout"
+          >
+            Signout
+          </Link>
+        </>
+      )}
+    </main>
+  );
+}
+```
+
+浏览器访问 `http://localhost:3000` , 返回如下结果:
+
+<img src={normalizeImagePath("/note/next/nextauth-4.png")} />
+
+### 3. 在 `client` 端使用 `getServerSession` 获取 session
+
+```tsx title="app/page.tsx"
+import { getServerSession } from "next-auth";
+import { useSession } from "next-auth/react";
+import { authOptions } from "./api/auth/[...nextauth]/authOptions";
+
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  return (
+    <main className="min-h-screen p-4">
+      <div>{session?.user?.name}</div>
+    </main>
+  );
+}
+```
+
+> 使用 `getServerSession` 的好处是，代码不需要放在 `client` 端执行，获取 `session` 可以无感刷新
+
+浏览器访问 `http://localhost:3000` , 返回如下结果:
+
+<img src={normalizeImagePath("/note/next/nextauth-5.png")} />
+
+## 将登录数据存放在数据库中
+
+### 1. 安装 `prisma` 适配器
+
+```bash
+npm i @next-auth/prisma-adapter
+```
+
+> 注意：`@next-auth/prisma-adapter` 需要配合 `prisma` 使用，所以需要先安装 `prisma`, 也可以使用其他的数据库适配器，可以参考[官方 Adapters](https://next-auth.js.org/adapters)
+
+### 2. 配置 next-auth
+
+```ts title="/app/api/auth/[...nextauth]/authOptions.ts"{3,4,7,18-20}
+import GithubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import prisma from "@/prisma/client";
+
+export const authOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GithubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET!,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  session: {
+    strategy: "jwt",
+  },
+};
+```
+
+:::danger{title="注意"}
+`next-auth` 会默认设置为 `session: { strategy: "jwt" }` 即将加密的 JWT（JWE）存储在会话 cookie 中, 但是当我们您使用了 `adapter` （适配器）时，`next-auth` 默认会使用 `session: { strategy: "database" }`， 即 cookie 中只会包含一个 `sessionToken`值，客户端无法获取 `session`，所以我们需要手动设置 `session: { strategy: "jwt" }`
+:::
+
+### 3. 创建用户表
+
+在 `prisma` 创建 `model`
+
+```base title="prisma/schema.prisma"
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+```
+
+> 以上是[官方推介](https://authjs.dev/reference/adapter/prisma?_gl=1*1m0asni*_gcl_au*MTYxNjA0MDkwLjE3MDkyNzk0MDMuMjA1NTYwMjc4Ny4xNzA5NjkzMTg0LjE3MDk2OTMyMDU.)的 model，可以根据需要进行修改。
+
+### 4. 测试
+
+通过页面重新登录，观察数据库变化。
+
+<img src={normalizeImagePath("/note/next/nextauth-6.png")} />

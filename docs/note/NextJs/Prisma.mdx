@@ -1,0 +1,199 @@
+import { normalizeImagePath } from "rspress/runtime";
+
+# Prisma
+
+## 建立 Prisma 数据库连接
+
+### 1. 安装 Prisma
+
+```bash
+  npm i prisma
+```
+
+### 2. 初始化 Prisma
+
+```bash
+  npx prisma init
+```
+
+执行后会生成两个配置文件：
+
+```ts title="prisma/schema.prisma"
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+```
+
+```ts title=".env"
+DATABASE_URL =
+  "postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public";
+```
+
+> 默认使用的是 postgresql
+
+我这里使用 MySQL，修改的配置文件如下：
+
+```ts title="prisma/schema.prisma"
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+```
+
+```ts title=".env"
+DATABASE_URL = "mysql://root:123456@localhost:3306/next-prisma";
+```
+
+### 3. 添加 model
+
+在`prisma/schema.prisma`文件中添加如下内容：
+
+```ts title="prisma/schema.prisma"
+
+model User {
+  id   Int    @unique() @default(autoincrement())
+  name String
+}
+
+```
+
+### 4. 创建数据库表
+
+```bash
+  npx prisma migrate dev
+```
+
+查看本地数据库：
+
+<img src={normalizeImagePath("/note/next/prisma-1.png")} />
+
+可以看到数据表建立成功了
+
+> 可以通过 `npx prisma --help` 查看更多命令
+
+```base
+Prisma is a modern DB toolkit to query, migrate and model your database (https://www.prisma.io)
+
+Usage
+
+  $ prisma [command]
+
+Commands
+
+            init   Setup Prisma for your app
+        generate   Generate artifacts (e.g. Prisma Client)
+              db   Manage your database schema and lifecycle
+         migrate   Migrate your database
+          studio   Browse your data with Prisma Studio
+        validate   Validate your Prisma schema
+          format   Format your Prisma schema
+
+Flags
+
+     --preview-feature   Run Preview Prisma commands
+
+Examples
+
+  Setup a new Prisma project
+  $ prisma init
+
+  Generate artifacts (e.g. Prisma Client)
+  $ prisma generate
+
+  Browse your data
+  $ prisma studio
+
+  Create migrations from your Prisma schema, apply them to the database, generate artifacts (e.g. Prisma Client)
+  $ prisma migrate dev
+
+  Pull the schema from an existing database, updating the Prisma schema
+  $ prisma db pull
+
+  Push the Prisma schema state to the database
+  $ prisma db push
+```
+
+## 建立 Next 与 Prisma 数据库连接
+
+### 1. 安装 Prisma Client
+
+```base
+npm i @prisma/client
+```
+
+### 2. 增加配置文件
+
+```ts title="prisma/client.ts"
+import { PrismaClient } from "@prisma/client";
+
+const prismaClientSingleton = () => {
+  return new PrismaClient();
+};
+
+declare global {
+  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
+}
+
+const prisma = globalThis.prisma ?? prismaClientSingleton();
+
+export default prisma;
+
+if (process.env.NODE_ENV !== "production") globalThis.prisma = prisma;
+```
+
+以上是 next 与 prisma 连接最佳实践， 具体可以参考 [Prisma 官方文档](https://www.prisma.io/docs/orm/more/help-and-troubleshooting/help-articles/nextjs-prisma-client-dev-practices)
+
+### 3. 验证连接
+
+#### 3.1 增加测试文件
+
+```ts title="app/api/user/route.ts"
+import { NextRequest, NextResponse } from "next/server";
+import z from "zod";
+import prisma from "@/prisma/client";
+
+const schema = z.object({
+  name: z.string().min(5),
+});
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+
+  const validating = await schema.safeParse(body);
+
+  if (!validating.success)
+    return NextResponse.json(validating.error.errors, { status: 400 });
+
+  const user = await prisma.user.create({
+    data: {
+      name: body.name,
+    },
+  });
+
+  return NextResponse.json({
+    message: "User created successfully",
+    data: user,
+    code: 200,
+  });
+}
+```
+
+#### 3.2 测试
+
+使用 `apifox` 测试
+
+<img src={normalizeImagePath("/note/next/prisma-3.png")} />
+
+查看数据库
+
+<img src={normalizeImagePath("/note/next/prisma-2.png")} />
+
+可以看到测试通过了，并且数据库中已经存在数据

@@ -34,6 +34,11 @@ export const data: {
         name: "TanstackQuery",
         link: "https://tanstack.com/query/latest/docs/framework/react/overview",
       },
+      {
+        icon: "/nav/react-email.jpg",
+        name: "ReactEmail",
+        link: "https://react.email/docs/introduction",
+      },
     ],
   },
   {

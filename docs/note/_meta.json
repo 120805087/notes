@@ -1,1 +1,14 @@
-["index", "introduction"]
+[
+  {
+    "type": "file",
+    "name": "index",
+    "label": "Index"
+  },
+  {
+    "type": "dir",
+    "name": "NextJs",  
+    "label": "Next.js",     
+    "collapsible": true,    
+    "collapsed": true     
+  }
+]  

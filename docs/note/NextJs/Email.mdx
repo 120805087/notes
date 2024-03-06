@@ -1,0 +1,124 @@
+import { normalizeImagePath } from "rspress/runtime";
+
+# Email
+
+## 1. 创建邮件模版
+
+### 1. 安装 `react-email`
+
+```base
+npm i react-email @react-email/components
+```
+
+### 2. 增加 `scripts` 设置
+
+```json title="package.json"{6}
+"scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "preview-email": "email dev"
+  },
+```
+
+### 3. 创建 `Email` 模板
+
+```ts title="/emails/textEmail.tsx"
+import { Button, Html } from "@react-email/components";
+import * as React from "react";
+
+export default function Email() {
+  return (
+    <Html>
+      <Button
+        href="https://example.com"
+        style={{ background: "#000", color: "#fff", padding: "12px 20px" }}
+      >
+        Click me
+      </Button>
+    </Html>
+  );
+}
+```
+
+### 4. 执行命令
+
+```base
+npm run preview-email
+```
+
+### 5. 查看页面变化
+
+<img src={normalizeImagePath("/note/next/nextauth-10.png")} />
+
+## 2. 发送邮件
+
+### 1. 安装依赖
+
+```base
+npm i @react-email/render nodemailer
+```
+
+> 我使用的是 `nodemailer` 发送邮件，你也可以使用其他方式发送邮件。 具体可以查看[官方文档](https://react.email/docs/integrations/overview)
+
+### 2. 增加邮箱配置
+
+```base title=".env"
+EMAIL_HOST="YOU_EMAIL_HOST"
+EMAIL_AUTH_USER="YOU_EMAIL_USER"
+// email Authorization password
+EMAIL_AUTH_PASS="YOU_EMAIL_PASS"
+```
+
+### 3. 创建 `sendEmail` api
+
+```ts title="api/send-email/route.ts"
+import { NextRequest, NextResponse } from "next/server";
+import { render } from "@react-email/render";
+import nodemailer from "nodemailer";
+import TestEmail from "@/emails/testEmail";
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  if (!body.name)
+    return NextResponse.json({ message: "No name provided" }, { status: 400 });
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_AUTH_USER,
+      pass: process.env.EMAIL_AUTH_PASS, // 授权码
+    },
+  });
+
+  const emailHtml = render(TestEmail({ name: body.name }));
+
+  const options = {
+    from: "******@163.com",
+    to: "******@qq.com",
+    subject: "hello world",
+    html: emailHtml,
+  };
+
+  const info = await transporter.sendMail(options);
+
+  return NextResponse.json({ message: "Email sent", info }, { status: 200 });
+}
+
+```
+
+### 4. 发送邮件
+
+使用 `apifox` 发送邮件
+
+<img src={normalizeImagePath("/note/next/nextauth-12.png")} />
+
+结果如下:
+
+<img src={normalizeImagePath("/note/next/nextauth-11.png")} />
+
+
+邮件发送成功!
