@@ -74,6 +74,16 @@ export const data: {
         name: "DaisyUi",
         link: "https://daisyui.com/",
       },
+      {
+        icon: "/nav/shadcn-ui.png",
+        name: "Shadcn/ui",
+        link: "https://ui.shadcn.com/docs/installation",
+      },
+      {
+        icon: "/nav/radix-ui.png",
+        name: "RadixUi",
+        link: "https://www.radix-ui.com/",
+      },
     ],
   },
   {
