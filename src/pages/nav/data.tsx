@@ -94,6 +94,16 @@ export const data: {
         name: "Zod",
         link: "https://zod.dev/?id=basic-usage",
       },
+      {
+        icon: "/nav/sentry.png",
+        name: "Sentry",
+        link: "https://sentry.io/welcome/",
+      },
+      {
+        icon: "/nav/sqlpub.png",
+        name: "SqlPub",
+        link: "https://sqlpub.com/#/",
+      },
     ],
   },
   {
