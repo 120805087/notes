@@ -4,12 +4,12 @@ import { defineConfig } from "rspress/config";
 export default defineConfig({
   root: path.join(__dirname, "docs"),
   base: "/notes/",
-  title: "Felity Notes",
+  title: "felicity Notes",
   description: "随缘笔记，仅供个人学习使用",
-  icon: "/felity-icon.png",
+  icon: "/felicity-icon.png",
   logo: {
-    light: "/felity-light-logo.png",
-    dark: "/felity-dark-logo.png",
+    light: "/felicity-light-logo.png",
+    dark: "/felicity-dark-logo.png",
   },
   globalStyles: path.join(__dirname, "src/assets/", "global.css"),
   themeConfig: {
@@ -24,7 +24,7 @@ export default defineConfig({
     prevPageText: "上一页",
     nextPageText: "下一页",
     footer: {
-      message: "© 2024 Felity. All Rights Reserved. ",
+      message: "© 2024 felicity. All Rights Reserved. ",
     },
   },
   builderConfig: {
