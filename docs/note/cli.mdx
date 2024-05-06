@@ -1,0 +1,101 @@
+## 1. 创建项目
+
+```bash
+npm init -y
+```
+
+## 2. 安装包
+
+```bash
+npm i chalk commander download-git-repo handlebars inquirer ora
+```
+
+## 3. 设置命令行，并产生交互，设置必要参数
+
+```js
+program.version("0.0.1", "-v, --version");
+program
+  .command("create [project-name]")
+  .description("初始化项目模版")
+  .action((name) => {
+    inquirer
+      .prompt([
+        {
+          type: "input",  // input 输入框 confirm 确认框 list 数组，可选
+          name: "projectName",
+          message: "请输入项目名称：",
+          when: function () {
+            return !name;
+          },
+        }
+      ])
+      .then((answers) => {
+        name = answers.projectName;
+       // 下载模版
+      });
+  });
+program.parse();
+```
+
+## 4. 模版处理， 设置 handlebars 格式的占位符
+
+```js
+ "name": "{{name}}",
+
+{{#if isRoot}}
+{{else}}
+basePath: "/{{name}}",
+{{/if}}
+```
+
+## 5. 下载模版
+
+```js
+download-git-repo(
+  "direct:https://github.com/********#main",
+  name,
+  { clone: true },
+  (err) => {
+    if (err) {
+      console.log(err);
+      spinner.fail();
+      console.log(chalk.red("下载模版失败，请稍后重试！"));
+      return;
+      return;
+    } else {
+      // 下载成功处理模版
+      // 处理模版
+      // 读取模版中的package.json文件
+      const packageStr = fs.readFileSync(`${name}/package.json`, "utf-8");
+      // 通过handlebars处理 package.json文件中的变量
+      const handleTemplate = handlebars.compile(packageStr)({
+        name,
+      });
+      // 重新写入 package.json文件
+      fs.writeFileSync(`${name}/package.json`, handleTemplate);
+
+      spinner.text = "下载成功";
+      spinner.color = "#13A10E";
+      spinner.succeed();
+      console.log("");
+      // 提示进入下载的目录
+      console.log(" # cd into Project");
+      console.log(chalk.gray("   $ ") + chalk.blue(`cd ${name}`));
+      console.log("");
+      // 提示安装依赖
+      console.log(" # Project setup");
+      console.log(chalk.gray("   $ ") + chalk.blue(`npm install`));
+      console.log("");
+      // 提示运行开发环境
+      console.log(" # Compiles and hot-reloads for development");
+      console.log(chalk.gray("   $ ") + chalk.blue(`npm run dev`));
+      console.log("");
+      // 提示打包生产环境代码
+      console.log(" # Compiles and minifies for production");
+      console.log(chalk.gray("   $ ") + chalk.blue(`npm run build`));
+      console.log("");
+    }
+  }
+);
+```
+

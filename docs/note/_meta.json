@@ -5,6 +5,11 @@
     "label": "Index"
   },
   {
+    "type": "file",
+    "name": "cli", 
+    "label": "脚手架制作"
+  },
+  {
     "type": "dir",
     "name": "NextJs",  
     "label": "Next.js",     
