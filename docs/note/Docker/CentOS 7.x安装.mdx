@@ -1,0 +1,131 @@
+import { normalizeImagePath } from "rspress/runtime";
+
+## 安装Docker
+
+### 1. 下载docker-ce的yum源 
+
+```base
+sudo wget -O /etc/yum.repos.d/docker-ce.repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+```
+
+### 2. 安装Docker
+
+```base
+sudo yum -y install docker-ce
+```
+
+### 3. 检查Docker是否安装成功
+
+```base
+docker -v
+```
+如下图所示，表示docker安装成功
+
+<img src={normalizeImagePath("/note/docker/docker-1.png")} />
+
+### 4. 启动Docker服务，并设置开机自启动
+
+```base
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+###  5. 查看Docker是否启动。
+
+```base
+sudo systemctl status docker
+```
+
+如下图回显所示，表示Docker已启动。
+<img src={normalizeImagePath("/note/docker/docker-2.png")} />
+
+## 安装docker-compose
+
+:::warning
+仅Python 3及以上版本支持docker-compose，并请确保已安装pip。
+:::
+
+### 1. 安装setuptools
+
+```base
+sudo pip3 install -U pip setuptools
+```
+
+### 2. 安装docker-compose
+
+```base
+sudo pip3 install docker-compose
+```
+
+### 3. 验证docker-compose是否安装成功
+
+```base
+docker-compose --version
+```
+
+如下图回显所示，表示docker-compose安装成功。
+<img src={normalizeImagePath("/note/docker/docker-3.png")} />
+
+## 配置镜像加速器
+
+### 1. 各厂商镜像加速地址
+
+中国官方镜像加速
+
+```base
+https://registry.docker-cn.com
+```
+
+网易163镜像加速
+
+```base
+http://hub-mirror.c.163.com
+```
+
+中科大镜像加速
+
+```base
+https://docker.mirrors.ustc.edu.cn
+```
+
+阿里云镜像加速获取地址： https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors
+
+### 2. 配置镜像加速地址
+
+可以通过修改daemon配置文件`/etc/docker/daemon.json`来使用加速器
+
+#### 1. 创建 /etc/docker 目录
+
+```base
+sudo mkdir -p /etc/docker
+```
+
+#### 2. 将标准输入的内容输出到文件 `/etc/docker/daemon.json` 中
+
+```base
+sudo tee /etc/docker/daemon.json <<-'EOF'
+```
+
+#### 3. 添加配置项
+
+```base
+{
+  "registry-mirrors": [
+    "https://n4jq1ext.mirror.aliyuncs.com",
+    "https://registry.docker-cn.com"
+ ]
+}
+```
+
+#### 4. 结束输入
+
+```base
+EOF
+```
+
+#### 5. 重新加载配置文件，并重启docker服务
+
+```base
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```

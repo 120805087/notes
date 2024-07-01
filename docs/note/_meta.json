@@ -2,7 +2,7 @@
   {
     "type": "file",
     "name": "index",
-    "label": "Index"
+    "label": "语法介绍"
   },
   {
     "type": "file",
@@ -12,15 +12,22 @@
   {
     "type": "dir",
     "name": "NextJs",  
-    "label": "Next.js",     
-    "collapsible": true,    
+    "label": "Next.js",      
+    "collapsible": true,   
     "collapsed": true     
   },
   {
     "type": "dir",
-    "name": "NestJS",   
+    "name": "NestJS",     
     "label": "NextJS",
-    "collapsible": true,    
+    "collapsible": true,
     "collapsed": true    
+  },
+  {  
+    "type": "dir",
+    "name": "Docker",   
+    "label": "Docker", 
+    "collapsible": true,    
+    "collapsed": true 
   } 
 ]  

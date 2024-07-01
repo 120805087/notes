@@ -1,0 +1,95 @@
+import { normalizeImagePath } from "rspress/runtime";
+
+## 安装 mysql 
+
+```base
+docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -p 3306:3306 -d mysql:latest
+```
+
+- `--name some-mysql`: 这个选项指定了容器的名称为 `some-mysql`。你可以根据需要为容器指定一个独特的名称。
+- `-e MYSQL_ROOT_PASSWORD=my-secret-pw`: 这个选项通过环境变量设置了 MySQL 数据库的 root 用户的密码为 `my-secret-pw`。这是必需的，因为 MySQL 容器要求设置一个 root 密码才能启动。
+-  `-p 3306:3306`: 这个选项指定了容器内部端口 3306（MySQL 默认端口）与宿主机的端口 3306 进行映射。这样做的目的是使得可以通过宿主机的 3306 端口访问 MySQL 服务。
+- `-d`: 这个选项让容器在后台（detached mode）运行，即使关闭终端或退出 shell，容器仍然在运行。
+- `mysql:latest`: 这是指定要运行的 Docker 镜像的名称和标签。`mysql` 是官方 MySQL Docker 镜像的名称，`latest` 是标签，表示使用最新的版本。这会从 Docker Hub 上下载 MySQL 最新版本的镜像并在容器中运行它。
+
+## 安装 redis 
+
+```base
+docker run --name some-redis -d -p 6379:6379 redis:latest --requirepass your-password
+```
+
+- `--name some-redis` 指定容器的名称为 some-redis，你可以根据需要修改这个名称。
+- `-d` 表示在后台运行容器。
+- `-p 6379:6379` 将 Redis 容器内部的 6379 端口映射到主机的 6379 端口，这样外部可以通过主机的 IP 地址和端口 6379 来访问 Redis 服务。
+- `redis:latest` 指定使用最新版本的 Redis 镜像，你也可以选择其他标签或版本。
+- `--requirepass your-password` 设置 Redis 的密码为 your-password，这样只有提供正确的密码才能访问 Redis 服务。
+
+---------------------------------------
+
+:::info
+nginx 和 node 镜像，我一般会通过 `Dockerfile` 使用，
+equals: 
+```base
+FROM nginx:latest
+COPY static-html-directory /usr/share/nginx/html
+```
+所以我要拉取体积相对小的 `alpine` 版本的
+`alpine` 版本， 可在  Alpine Linux 官方映像中获取。 Alpine Linux 比大多数发行版基础镜像小得多
+我们大多数国内的镜像加速无法拉取 Alpine Linux 官方的镜像，所以需要使用通过私人镜像仓库在拉取，我这里使用的是阿里云的镜像仓库
+:::
+
+## 拉取 nginx
+
+- 拉取镜像
+```base
+docker pull registry.cn-beijing.aliyuncs.com/felicity-docker/nginx:stable-alpine3.17-perl
+```
+
+:::danger{title="重要"}
+拉取前，需要提前登录，否则无法拉取成功
+```base
+docker login --username=user-name registry.cn-beijing.aliyuncs.com
+```
+:::
+
+如下图所示，表示nginx已拉取成功。
+<img src={normalizeImagePath("/note/docker/docker-4.png")} />
+
+- 修改标签，因为镜像名称较长，所以改镜像标签以便记忆区分。
+
+```base
+docker tag registry.cn-beijing.aliyuncs.com/felicity-docker/nginx:stable-alpine3.17-perl nginx:stable-alpine3.17-perl
+```
+
+如下图所示，表示tag修改成功。
+<img src={normalizeImagePath("/note/docker/docker-5.png")} />
+
+- 强制删除镜像，存在两个名字不同的镜像，所以需要强制删除不需要使用的。
+
+```base
+docker rmi -f registry.cn-beijing.aliyuncs.com/felicity-docker/nginx:stable-alpine3.17-perl
+```
+
+如下图所示，删除成功， 只存一个nginx了。
+<img src={normalizeImagePath("/note/docker/docker-6.png")} />
+
+## 拉取 node 镜像
+
+node 镜像拉取同上，都是拉取阿里云镜像仓库
+
+- 拉取镜像
+```base
+docker pull registry.cn-beijing.aliyuncs.com/felicity-docker/node:18-alpine3.19
+```
+
+- 修改标签
+
+```base
+docker tag registry.cn-beijing.aliyuncs.com/felicity-docker/node:18-alpine3.19 node:18-alpine3.19
+```
+
+- 强制删除镜像
+
+```base
+docker rmi -f registry.cn-beijing.aliyuncs.com/felicity-docker/node:18-alpine3.19
+```
